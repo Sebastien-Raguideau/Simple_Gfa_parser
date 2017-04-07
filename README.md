@@ -11,7 +11,8 @@ Parse_gfa.py overlaping_size file_in file_out -C contig_to_bin_map
 ```
 overlaping_size :  number of nucleotides overlaping between contigs in the assembly graph
 
-file_in : if file_in is ".fa", call megahit toolbox then Bandage to produce a gfa file, then process it
+file_in :
+          if file_in is ".fa", call megahit toolbox then Bandage to produce a gfa file, then process it
           if file_in is ".fastg", call Bandage to to produce a gfa file, then process it
           if file_in is ".gfa", just extract graph informations
 
