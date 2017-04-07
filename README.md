@@ -3,7 +3,7 @@
 Script used in order to parse assembly graph in gfa format and store it in Networkx and graph-tool datastructure.
 Depending on entry argument, it can also generate a gfa file from the fasta file of contigs from assembly, in order to do this it call in turn megahit and Bandage which need to by availlable in your Path. Graph object are stored as the native .gt format for graphtool and as a pickle output for networkx. 
 
-An important point of this script is that we delete a few edges in order to separate contigs from their reverse complements. This is done by looking at the shortest paht between a contig and its reverse complement and deleting the shortest among all contigs. 
+An important point of this script is that we delete a few edges in order to separate contigs from their reverse complements. This is done by looking at the collection of shortest path between a contig and their reverse complement, then the shortest path of the collection is cut at the vertex of lowest degre. 
 
 Exemple of use : 
 ```
