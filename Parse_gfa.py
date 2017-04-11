@@ -10,6 +10,7 @@ import argparse
 import numpy as np
 from collections import Counter
 import graph_tool as gt
+from graph_tool import draw
 import pickle
 
 def Parse_gfa(gfa_file,G,Dictionary_contig_label):
@@ -23,7 +24,7 @@ def Parse_gfa(gfa_file,G,Dictionary_contig_label):
 			# [S,name,sequence,LN:i:117,KC:i:85209,CL:z:#5cb9be]
 			(name,seq_plus)=(Line[1],Seq(Line[2]))
 			seq_len=len(seq_plus)
-			color=""
+			color="#CF0626"
 			if len(Line)>5 :
 				color=Line[5].split(':')[-1]
 			if name in Dictionary_contig_label :
@@ -260,14 +261,14 @@ def Translation_from_NX_to_Gt(G,Gt) :
 		Gt.add_edge(Gt.vertex(edge1),Gt.vertex(edge2))
 
 
-
-
-
 def Save_Graph(G,Gt,file_out) :
 	Handle=open(file_out+'.Nx_Pickle','w')
 	pickle.dump(G, Handle)
 	Handle.close()
 	Gt.save(file_out+'.gt')
+
+def Draw_Graph(Draw,Gt):
+	gt.draw.graph_draw(Gt, vertex_fill_color=Gt.vertex_properties['Color'],vertex_text=Gt.vertex_properties['Name'],vertex_font_size=6,output_size=(1200,1200),output = Draw)
 
 
 # contig_overlap="119"
@@ -277,7 +278,7 @@ def Save_Graph(G,Gt,file_out) :
 # gfa_file_raw='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.gfa'
 
 
-def main(contig_overlap,File_in,File_out,contig_assignment) :
+def main(contig_overlap,File_in,File_out,contig_assignment,Draw) :
 	""" Use Megahit to generate the graph of assembly in fastg format, then use bandage to generate a gfa file, which is a compressed version. Graph data is then parsed and stored in a networkx of graph-tool datastructure. If information is availlable regarding the micro-organism or the bin, a contig come from it is coded as a color for Bandage representation and as a metadata in Networkx graph structure. """
 	Dico_Contig_MO=Get_Contig_Assignment(contig_assignment)
 	if File_in.split('.')[-1]=='fa' :
@@ -305,6 +306,8 @@ def main(contig_overlap,File_in,File_out,contig_assignment) :
 	Gt=gt.Graph(directed=False)
 	Translation_from_NX_to_Gt(G,Gt)
 	Save_Graph(G,Gt,File_out)
+	if Draw!="" :
+		Draw_Graph(Draw,Gt)
 
 
 
@@ -316,12 +319,17 @@ if __name__ == "__main__":
 	parser.add_argument("File_in", help="Depending on task to be done can be a fasta file, a fastg or a gfa")
 	parser.add_argument("Output", help="file name for graph file output")
 	parser.add_argument("-C",help="contig species assignment",default="")
+	parser.add_argument("-Draw",help="Use graph-tool to draw the assembly graph, if contig species assignment was filled, the graph is colored",default="")
 	#parser.add_argument("Graph_library",help="Choose between Networkx and Graph-tool as a graph-library")
 	args = parser.parse_args()
+	Contig_assignment=""
+	Draw=""
 	if args.C :
-		main(args.contig_overlap,args.File_in,args.Output,args.C)
-	else :
-		main(args.contig_overlap,args.File_in,args.Output,"")
+		Contig_assignment=args.C
+	if args.Draw :
+		Draw=args.Draw
+	main(args.contig_overlap,args.File_in,args.Output,Contig_assignment,Draw)
+
 
 
 
