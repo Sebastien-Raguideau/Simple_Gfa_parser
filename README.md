@@ -20,7 +20,7 @@ file_out : name of output file
 
 -C contig_to_bin_map : falcultative argument, allow to add information regarding vertexes in your graph, namely membership of a contig in a bin. The file contig_to_bin_map need to be in the following format : name_of_contig:name_of_bin .Name_of_contig need to be the same as in file_in. At the moment a maximum of 20 differents bin is supported. 
     
--Draw Graph.format : facultative argument, use graph-tool to draw the assembly graph in the file "graph" in the format ".format", it can be any of thoses : xlib", "ps", "svg", "svgz", "fig", "mif", "hpgl", "pcl", "png", "gif", "dia", "imap", "cmapx". If contig_to_bin_map was also used, vertices are colored following vertices bin membership. 
+-Draw Graph.format : facultative argument, use graph-tool to draw the assembly graph in the file "graph" in the format ".format", it can be any of thoses : "xlib", "ps", "svg", "svgz", "fig", "mif", "hpgl", "pcl", "png", "gif", "dia", "imap", "cmapx". If contig_to_bin_map was also used, vertices are colored following vertices bin membership. 
 
 #Pratical example :
 Using files in Example folder, the following command is ewecuted :
