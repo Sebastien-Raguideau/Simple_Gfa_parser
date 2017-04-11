@@ -22,5 +22,10 @@ file_out : name of output file
     
 -Draw Graph.format : facultative argument, use graph-tool to draw the assembly graph in the file "graph" in the format ".format", it can be any of thoses : xlib", "ps", "svg", "svgz", "fig", "mif", "hpgl", "pcl", "png", "gif", "dia", "imap", "cmapx". If contig_to_bin_map was also used, vertices are colored following vertices bin membership. 
 
-
-
+#Pratical example :
+Using files in Example folder, the following command is ewecuted :
+```
+Parse_gfa.py 141 Example/LactoParaPhage_contig.fa Example/LactoParaPhage_contig -C Lacto_Species.csv -Draw Graph.pdf
+```
+This yield the following graph-tool graph :
+![picture alt](https://github.com/Sebastien-Raguideau/Simple_Gfa_parser/blob/master/Example/Graph.pdf)
