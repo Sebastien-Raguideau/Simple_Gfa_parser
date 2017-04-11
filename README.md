@@ -28,4 +28,4 @@ Using files in Example folder, the following command is ewecuted :
 Parse_gfa.py 141 Example/LactoParaPhage_contig.fa Example/LactoParaPhage_contig -C Lacto_Species.csv -Draw Graph.pdf
 ```
 This yield the following graph-tool graph :
-![picture alt](https://github.com/Sebastien-Raguideau/Simple_Gfa_parser/blob/master/Example/Graph.pdf)
+![alt tag](https://github.com/Sebastien-Raguideau/Simple_Gfa_parser/blob/master/Example/Graph.pdf)
