@@ -29,7 +29,9 @@ Parse_gfa.py 141 Example/LactoParaPhage_contig.fa Example/LactoParaPhage_contig 
 ```
 This yield the following graph-tool graph :
 
-![alt tag](https://github.com/Sebastien-Raguideau/Simple_Gfa_parser/blob/master/Example/Graph.pdf)
+![alt tag](./Example/Graph.pdf)
+
+
 
 
 
