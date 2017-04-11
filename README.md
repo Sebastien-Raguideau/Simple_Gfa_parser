@@ -25,7 +25,7 @@ file_out : name of output file
 #Pratical example :
 Using files in Example folder, the following command is ewecuted :
 ```
-Parse_gfa.py 141 Example/LactoParaPhage_contig.fa Example/LactoParaPhage_contig -C Lacto_Species.csv -Draw Graph.pdf
+Parse_gfa.py 141 Example/LactoParaPhage_contig.fa Example/LactoParaPhage_contig -C Example/Lacto_Species.csv -Draw Example/Graph.pdf
 ```
 This yield the following graph-tool graph :
 
