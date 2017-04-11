@@ -173,7 +173,7 @@ def Get_Contig_Assignment(contig_assignment) :
 		Handle=open(contig_assignment)
 		Dico_Contig_Bug={}
 		for line in Handle : 
-			(contig_name,bug_name)=line.split(',')[0:2]
+			(contig_name,bug_name)=line.rstrip().split(',')[0:2]
 			contig_name=contig_name.split('.')[0]
 			if contig_name not in Dico_Contig_Bug :
 				Dico_Contig_Bug[contig_name]=[bug_name]
@@ -206,9 +206,10 @@ def Rewrite_gfa(Dico_Contig_Bug,fasta_file,gfa_file) :
 	# First assign color to contig 
 	#	Color_scheme=[Red1,Green1,BLue1,Pink1,Orange1,Yellow1,Gray1,Cyan1,strange,orangish,purple,red2,Green2,blue2,pink2,Gray2,Orange2,Green3,Cyan2,purple2]
 	if Dico_Contig_Bug!={} :
-		Color_scheme=["#ff0000","#33cc33","#0066ff","#e600ac","ff9933","#ffff00","#cccccc","#00ffcc","#666699","#802000","#cc0099","#b32400","#00ff00","#003d99","#ff33cc","#737373","#e6b800","#ccff33","#47d1d1","#990099"]		
+		Color_scheme=["#ff0000","#33cc33","#0066ff","#e600ac","#ff9933","#ffff00","#cccccc","#00ffcc","#666699","#802000","#cc0099","#b32400","#00ff00","#003d99","#ff33cc","#737373","#e6b800","#ccff33","#47d1d1","#990099"]		
 		List_Bugs=list(set([a for a in Dico_Contig_Bug.values()]))
-		del List_Bugs[List_Bugs.index("NA")]
+		if "NA" in List_Bugs :
+			del List_Bugs[List_Bugs.index("NA")]
 		Dico_Contig_color={Contig:Color_scheme[List_Bugs.index(Bug)] if Bug in List_Bugs else "#000000" for Contig,Bug in Dico_Contig_Bug.items()}
 		Dico_Order_Color={Order:Dico_Contig_color[Dico_Order_Contig[Order]] for Order,contig_name in Dico_Order_Contig.items()}
 		# next add this information to the gfa file 
@@ -258,6 +259,10 @@ def Translation_from_NX_to_Gt(G,Gt) :
 		edge1,edge2=Dico_name_index[edges[0]],Dico_name_index[edges[1]]
 		Gt.add_edge(Gt.vertex(edge1),Gt.vertex(edge2))
 
+
+
+
+
 def Save_Graph(G,Gt,file_out) :
 	Handle=open(file_out+'.Nx_Pickle','w')
 	pickle.dump(G, Handle)
@@ -282,10 +287,10 @@ def main(contig_overlap,File_in,File_out,contig_assignment) :
 		os.system(" ".join(["Bandage reduce",fastg_file,gfa_file]))
 		os.system("rm " +fastg_file)
 		gfa_file=gfa_file+".gfa"
-		Dico_Contig_MO=Get_Contig_Assignment(contig_assignment)
 		# Add contig name and also color if contig_assignment is not empty 	
 		Rewrite_gfa(Dico_Contig_MO,File_in,gfa_file)
-	if File_in.split('.')[-1]=='fastg' :	
+	if File_in.split('.')[-1]=='fastg' :
+		fastg_file=File_in
 		gfa_file=File_in.replace('.fastg','')
 		os.system(" ".join(["Bandage reduce",fastg_file,gfa_file]))
 		gfa_file=gfa_file+".gfa"
