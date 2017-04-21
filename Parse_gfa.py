@@ -30,7 +30,7 @@ def Parse_gfa(gfa_file,G,Dictionary_contig_label):
 			if name in Dictionary_contig_label :
 				Bin=Dictionary_contig_label[name]
 			else :
-				Bin=0
+				Bin=[]
 			cov=float(Line[4].replace("KC:i:",""))/seq_len
 			G.add_node(name+"+",Name=name+"+",Seq=seq_plus,Cov=cov,Color=color,Bin=Bin)
 			G.add_node(name+"-",Name=name+"-",Seq=seq_plus.reverse_complement(),Cov=cov,Color=color,Bin=Bin)
@@ -170,28 +170,33 @@ def delete_redundant_comp(G,round) :
 		delete_redundant_comp(G,1)
 
 def Get_Contig_Assignment(contig_assignment) :
-	if contig_assignment!="" :
-		Handle=open(contig_assignment)
-		Dico_Contig_Bug={}
+	Dico_Contig_Bug={}
+	if contig_assignment[0]=="C" :
+		Handle=open(contig_assignment[1])
 		for line in Handle : 
-			(contig_name,bug_name)=line.rstrip().split(',')[0:2]
+			(contig_name,List_bug_name)=line.rstrip().split(',')[0],line.rstrip().split(',')[1:]
 			contig_name=contig_name.split('.')[0]
 			if contig_name not in Dico_Contig_Bug :
-				Dico_Contig_Bug[contig_name]=[bug_name]
+				Dico_Contig_Bug[contig_name]=List_bug_name
 			else :
-				Dico_Contig_Bug[contig_name].append(bug_name)
+				Dico_Contig_Bug[contig_name].append(List_bug_name)
 		Handle.close()
-		Dico_Contig_Bug2={}
-		for contig_name,list_bug_name in Dico_Contig_Bug.items() :
-			if len(list_bug_name)>1 :
-				most_common,occurence_number=Counter(list_bug_name).most_common(1)[0]
-				Dico_Contig_Bug2[contig_name]=most_common
-			else :
-				Dico_Contig_Bug2[contig_name]=list_bug_name[0]
-		Dico_Contig_Bug=Dico_Contig_Bug2
 		return Dico_Contig_Bug
-	else :
-		return {}
+	elif contig_assignment[0]=="TabC" :
+		Handle=open(contig_assignment[1])
+		Header=Handle.next().rstrip().split(',')[1:]
+		for line in Handle :
+			line=line.rstrip().split(',')
+			key=line[0]
+			value=[Header[index] for index,value in enumerate(line[1:]) if float(value)!=0]
+			value=(value==[])*["NA"]+(value!=[])*value
+			Dico_Contig_Bug[key]=value
+	return Dico_Contig_Bug
+
+
+
+		
+
 
 
 def Rewrite_gfa(Dico_Contig_Bug,fasta_file,gfa_file) :
@@ -206,12 +211,22 @@ def Rewrite_gfa(Dico_Contig_Bug,fasta_file,gfa_file) :
 	Handle.close()
 	# First assign color to contig 
 	#	Color_scheme=[Red1,Green1,BLue1,Pink1,Orange1,Yellow1,Gray1,Cyan1,strange,orangish,purple,red2,Green2,blue2,pink2,Gray2,Orange2,Green3,Cyan2,purple2]
+	#["#ff0000","#33cc33","#0066ff","#e600ac","#ff9933","#ffff00","#cccccc","#00ffcc","#666699","#802000","#cc0099","#b32400","#00ff00","#003d99","#ff33cc","#737373","#e6b800","#ccff33","#47d1d1","#990099"]
+
 	if Dico_Contig_Bug!={} :
-		Color_scheme=["#ff0000","#33cc33","#0066ff","#e600ac","#ff9933","#ffff00","#cccccc","#00ffcc","#666699","#802000","#cc0099","#b32400","#00ff00","#003d99","#ff33cc","#737373","#e6b800","#ccff33","#47d1d1","#990099"]		
-		List_Bugs=list(set([a for a in Dico_Contig_Bug.values()]))
+		Color_scheme=["#F0A3FF", "#0075DC", "#993F00","#4C005C","#2BCE48","#FFCC99","#808080","#94FFB5","#8F7C00","#9DCC00","#C20088","#003380","#FFA405","#FFA8BB","#426600","#FF0010","#5EF1F2","#00998F","#740AFF","#990000","#FFFF00"]
+		def merge_color(Listcolor) :
+			total_color=np.zeros(3)
+			for color in Listcolor :
+				total_color=total_color+np.array([int(color[1:3],16),int(color[3:5],16),int(color[5:],16)])
+			int_to_hex=lambda x:hex(int(x))[2:].upper() 
+			Correct_int_to_hex=lambda x:int_to_hex(x)*(int_to_hex(x)!="0")+"00"*(int_to_hex(x)=="0")
+			Merged_color="#"+"".join([Correct_int_to_hex(value) for value in total_color/len(Listcolor)])
+			return Merged_color
+		List_Bugs=list(set([z for a in Dico_Contig_Bug.values() for z in a ]))
 		if "NA" in List_Bugs :
 			del List_Bugs[List_Bugs.index("NA")]
-		Dico_Contig_color={Contig:Color_scheme[List_Bugs.index(Bug)] if Bug in List_Bugs else "#000000" for Contig,Bug in Dico_Contig_Bug.items()}
+		Dico_Contig_color={Contig:merge_color([Color_scheme[List_Bugs.index(Bug)] for Bug in BugList]) if BugList!=["NA"] else "#000000" for Contig,BugList in Dico_Contig_Bug.items()}
 		Dico_Order_Color={Order:Dico_Contig_color[Dico_Order_Contig[Order]] for Order,contig_name in Dico_Order_Contig.items()}
 		# next add this information to the gfa file 
 	Handle=open(gfa_file)
@@ -241,7 +256,7 @@ def Translation_from_NX_to_Gt(G,Gt) :
 	vertex_prop_Seq = Gt.new_vertex_property("object")
 	vertex_prop_Cov = Gt.new_vertex_property("double")
 	vertex_prop_Color = Gt.new_vertex_property("string")
-	vertex_prop_Bin = Gt.new_vertex_property("string")
+	vertex_prop_Bin = Gt.new_vertex_property("vector<string>")
 	for index,node_name in enumerate(Ordered_node_list) :
 		vertex=Gt.vertex(index)
 		vertex_prop_Name[vertex]=G.node[node_name]["Name"]
@@ -277,6 +292,14 @@ def Draw_Graph(Draw,Gt):
 # gfa_file='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.contigs.gfa'
 # gfa_file_raw='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.gfa'
 
+contig_overlap="141"
+File_in='LactoParaPhage_contig.fa'
+contig_assignment=["TabC","LactoAssign.csv"]
+Draw=""
+# gfa_file='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.contigs.gfa'
+# gfa_file_raw='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.gfa'
+
+
 
 def main(contig_overlap,File_in,File_out,contig_assignment,Draw) :
 	""" Use Megahit to generate the graph of assembly in fastg format, then use bandage to generate a gfa file, which is a compressed version. Graph data is then parsed and stored in a networkx of graph-tool datastructure. If information is availlable regarding the micro-organism or the bin, a contig come from it is coded as a color for Bandage representation and as a metadata in Networkx graph structure. """
@@ -297,12 +320,12 @@ def main(contig_overlap,File_in,File_out,contig_assignment,Draw) :
 		gfa_file=gfa_file+".gfa"
 	if File_in.split('.')[-1]=='gfa' :
 		gfa_file=File_in
-	# Extract all relevant information from gfa_file and build a Networxk graph 
+	# Extract all relevant information from gfa_file and build a Networxk graph 
 	G=nx.Graph()
 	Parse_gfa(gfa_file,G,Dico_Contig_MO)
 	# delete redundant information, namely reverse-complement graph
 	delete_redundant_comp(G,0)
-	# translate graph in graph-tool object
+	# translate graph in graph-tool object
 	Gt=gt.Graph(directed=False)
 	Translation_from_NX_to_Gt(G,Gt)
 	Save_Graph(G,Gt,File_out)
@@ -319,17 +342,16 @@ if __name__ == "__main__":
 	parser.add_argument("File_in", help="Depending on task to be done can be a fasta file, a fastg or a gfa")
 	parser.add_argument("Output", help="file name for graph file output")
 	parser.add_argument("-C",help="contig species assignment",default="")
+	parser.add_argument("-TabC",help="contig species assignment, table format",default="")
 	parser.add_argument("-Draw",help="Use graph-tool to draw the assembly graph, if contig species assignment was filled, the graph is colored",default="")
 	#parser.add_argument("Graph_library",help="Choose between Networkx and Graph-tool as a graph-library")
 	args = parser.parse_args()
-	Contig_assignment=""
+	Contig_assignment=["None",""]
 	Draw=""
 	if args.C :
-		Contig_assignment=args.C
+		Contig_assignment=["C",args.C]
+	if args.TabC :
+		Contig_assignment=["TabC",args.TabC]
 	if args.Draw :
 		Draw=args.Draw
 	main(args.contig_overlap,args.File_in,args.Output,Contig_assignment,Draw)
-
-
-
-
