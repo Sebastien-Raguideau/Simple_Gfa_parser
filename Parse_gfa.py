@@ -292,10 +292,10 @@ def Draw_Graph(Draw,Gt):
 # gfa_file='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.contigs.gfa'
 # gfa_file_raw='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.gfa'
 
-contig_overlap="141"
-File_in='LactoParaPhage_contig.fa'
-contig_assignment=["TabC","LactoAssign.csv"]
-Draw=""
+#contig_overlap="141"
+#File_in='LactoParaPhage_contig.fa'
+#contig_assignment=["TabC","LactoAssign.csv"]
+#Draw=""
 # gfa_file='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.contigs.gfa'
 # gfa_file_raw='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.gfa'
 
