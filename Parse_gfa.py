@@ -41,32 +41,34 @@ def Parse_gfa(gfa_file,G,Dictionary_contig_label):
 			G.add_edge("".join([Line[3],reverse_sign(Line[4])]),"".join([Line[1],reverse_sign(Line[2])]))
 	Handle.close()
 
-def Generate_gfa_file(G,gfa_file,contig_overlap,After_pruning) :
-	Handle=open(gfa_file,"w")
-	for node_name,dico_node in G.node.items() :
-	#S	1	AGTCTTCGTCCAGGGGGCCGCCTTCGCCACCGGTATTCCTCCAGATCTCTACGCATTTCACCGCTACACCTGGAATTCTACCCCCCTCTACGAGACTCACGCTTGCCAGTATCAGATG	LN:i:118	KC:i:82948	CL:z:#5cb9be	C2:z:#5cb9be
-		if node_name[-1]=="+" :
-			seq=dico_node["Seq"]
-			color=""
-			if 'Color' in dico_node :
-				color="\tCL:z:"+dico_node['Color']
-			towrite=["S",node_name[:-1],seq.tostring(),"LN:i:"+str(len(seq)),"KC:i:"+str(len(seq)*dico_node['Cov'])]
-			Handle.write("\t".join(towrite)+color+"\n")
-	for Random_Edges in G.edges() :
-	#L	52	-	11	+	99M
-		if After_pruning:
-			node1,node2=(G.node[Random_Edges[0]],G.node[Random_Edges[1]])
-			if node1['Seq'][-int(contig_overlap):]==node2['Seq'][:int(contig_overlap)] :
-				Edges=[node1['Name'],node2['Name']]
-			else :
-				Edges=[node2['Name'],node1['Name']]
-			towrite=["L",Edges[0][:-1],Edges[0][-1],Edges[1][:-1],Edges[1][-1],contig_overlap+"M\n"]
-			Handle.write("\t".join(towrite))
-		else :
-			Dico=G[Random_Edges[0]][Random_Edges[1]]
-			if Dico!={} :
-				Handle.write(Dico["Struct"]+"\n")
-	Handle.close()
+######### Need to add the case where node_name[-1]=="-" ############
+#
+# def Generate_gfa_file(G,gfa_file,contig_overlap,After_pruning) :
+# 	Handle=open(gfa_file,"w")
+# 	for node_name,dico_node in G.node.items() :
+# 	#S	1	AGTCTTCGTCCAGGGGGCCGCCTTCGCCACCGGTATTCCTCCAGATCTCTACGCATTTCACCGCTACACCTGGAATTCTACCCCCCTCTACGAGACTCACGCTTGCCAGTATCAGATG	LN:i:118	KC:i:82948	CL:z:#5cb9be	C2:z:#5cb9be
+# 		if node_name[-1]=="+" :
+# 			seq=dico_node["Seq"]
+# 			color=""
+# 			if 'Color' in dico_node :
+# 				color="\tCL:z:"+dico_node['Color']
+# 			towrite=["S",node_name[:-1],seq.tostring(),"LN:i:"+str(len(seq)),"KC:i:"+str(len(seq)*dico_node['Cov'])]
+# 			Handle.write("\t".join(towrite)+color+"\n")
+# 	for Random_Edges in G.edges() :
+# 	#L	52	-	11	+	99M
+# 		if After_pruning:
+# 			node1,node2=(G.node[Random_Edges[0]],G.node[Random_Edges[1]])
+# 			if node1['Seq'][-int(contig_overlap):]==node2['Seq'][:int(contig_overlap)] :
+# 				Edges=[node1['Name'],node2['Name']]
+# 			else :
+# 				Edges=[node2['Name'],node1['Name']]
+# 			towrite=["L",Edges[0][:-1],Edges[0][-1],Edges[1][:-1],Edges[1][-1],contig_overlap+"M\n"]
+# 			Handle.write("\t".join(towrite))
+# 		else :
+# 			Dico=G[Random_Edges[0]][Random_Edges[1]]
+# 			if Dico!={} :
+# 				Handle.write(Dico["Struct"]+"\n")
+# 	Handle.close()
 
 
 # def Generate_adjacency_matrix(G) :
@@ -85,47 +87,24 @@ def Generate_gfa_file(G,gfa_file,contig_overlap,After_pruning) :
 # 	Handle.close()
 
 
-def Delete_root_of_joined_comp(G,comp):
-	"""For some contigs, paths can be found between themselves and their respective reverse-complement, we make the decision to cut them"""
-	def reverse_Node_sign(Node):
-		sign=Node[-1]
-		Node=Node[:-1]
+def Parse_gfa_light(gfa_file,G,Dictionary_contig_label):
+	def reverse_sign(sign):
 		sign="+"*(sign=="-")+"-"*(sign=="+")
-		Node=Node+sign
-		return Node
-	def check_result_of_removal(G,comp,Edges_to_remove):
-		G_sub=G.subgraph(comp)
-		G_sub.remove_edges_from(Edges_to_remove)
-		if len([comp for comp in nx.connected_components(G_sub)])!=2:
-			return 0,G_sub
-		else :
-			return 1,G_sub
-	def Get_root_of_joined_comp(G,comp) :
-		dico_node_selfdist={node[:-1]:0 for node in list(comp)}
-		dico_node_selfdist={node:len(nx.shortest_path(G,node+"+",node+"-")) for node in dico_node_selfdist}
-		dico_selfdist_node={dist:[] for dist in dico_node_selfdist.values()}
-		for node,dist in dico_node_selfdist.items() : 
-			dico_selfdist_node[dist].append(node)
-		minDist=min(dico_node_selfdist.values())
-		List_nodes=dico_selfdist_node[minDist]
-		Root=sorted(List_nodes,key=lambda x:len(G.neighbors(x+'+')))[0]+"+"
-		return Root
-	def Pruning_routine(G,comp,Edges_to_remove,List_Root) :
-		#print len(List_Root)
-		Current_Root=Get_root_of_joined_comp(G,comp)
-		List_Root.append(Current_Root)
-		neighbors=[nodes for nodes in G.neighbors(Current_Root)]
-		neighbors_num=Counter(List_Root)[Current_Root]-1
-		Edges_to_remove.append((Current_Root,neighbors[neighbors_num]))
-		Edges_to_remove.append((reverse_Node_sign(Current_Root),reverse_Node_sign(neighbors[neighbors_num])))
-		res,G_sub=check_result_of_removal(G,comp,Edges_to_remove)
-		if res!=1 :
-			Pruning_routine(G_sub,comp,Edges_to_remove,List_Root)
-	List_Root=[]
-	Edges_to_remove=[]
-	Pruning_routine(G,comp,Edges_to_remove,List_Root)
-	#return check_result_of_removal(G,comp,Edges_to_remove)
-	G.remove_edges_from(Edges_to_remove)
+		return sign 
+	Handle=open(gfa_file)
+	for Line in Handle : 
+		Line=Line.rstrip().split("\t")
+		if Line[0]=="S" : 
+			# [S,name,sequence,LN:i:117,KC:i:85209,CL:z:#5cb9be]
+			(name,seq_plus)=(Line[1],Seq(Line[2]))
+			G.add_node(name+"+",Name=name+"+")
+			G.add_node(name+"-",Name=name+"-")
+		if Line[0]=="L" :
+			# ['L','2','+','27','+','99M']
+			G.add_edge("".join(Line[1:3]),"".join(Line[3:5]))
+			G["".join(Line[1:3])]["".join(Line[3:5])]['Struct']="\t".join(Line)
+			G.add_edge("".join([Line[3],reverse_sign(Line[4])]),"".join([Line[1],reverse_sign(Line[2])]))
+	Handle.close()
 
 
 def delete_redundant_comp(G,round) :
@@ -139,6 +118,7 @@ def delete_redundant_comp(G,round) :
 	def reverse_set_sign(Set):
 		Set=set([reverse_Node_sign(Node) for Node in Set])
 		return Set
+	Tuple_gen=lambda Set:tuple([node[:-1] for node in sorted(Set)])
 	Node_to_delete=[]
 	Comp_to_check=[]
 	Listcomp=[comp for comp in nx.connected_components(G)]
@@ -147,27 +127,93 @@ def delete_redundant_comp(G,round) :
 	for comp in Listcomp :
 		Dico_len_comp[len(comp)].append(comp)
 	for Len,List_set_comp in Dico_len_comp.items():
-		for index1,set_comp in enumerate(List_set_comp) :
-			if set_comp!={} :
-				if Len==1 :
-					comp=list(set_comp)[0][:-1]+"-"
-					if comp not in Node_to_delete : 
-						Node_to_delete.append(comp)
+		if Len==1 :
+			List_comp=list(set([list(set_comp)[0][:-1]+"-" for set_comp in List_set_comp]))
+			Node_to_delete+=List_comp
+		else :
+			Mother_of_all_set=set([Tuple_gen(Set) for Set in List_set_comp])
+			Dico_Tuple={Tuple:[] for Tuple in Mother_of_all_set}
+			for set_comp in List_set_comp :
+				Dico_Tuple[Tuple_gen(set_comp)].append(set_comp)
+			for values in Dico_Tuple.values() :
+				List_node=list(values[0])
+				if len(values)==2 :
+					Node_to_delete+=List_node
 				else :
-					tocheck=[index for index,set_comp2 in enumerate(List_set_comp) if (reverse_set_sign(set_comp)==set_comp2)&(index!=index1)]
-					if len(tocheck)==1 :
-						set_comp2=List_set_comp[tocheck[0]]
-						List_set_comp[tocheck[0]]={}
-						for node in list(set_comp2) :
-							Node_to_delete.append(node)
-					else :
-						Comp_to_check.append(set_comp)
+					Comp_to_check.append(values[0])
 	G.remove_nodes_from(Node_to_delete)
 	# return Node_to_delete,Comp_to_check
 	if round==0 :
+		List_nodes_comp_to_check=[nodes for comp in Comp_to_check for nodes in comp]
+		G_sub=G.subgraph(List_nodes_comp_to_check)
+		G.remove_nodes_from(List_nodes_comp_to_check)
 		for comp in Comp_to_check :
-			Delete_root_of_joined_comp(G,comp)
-		delete_redundant_comp(G,1)
+			Delete_root_of_joined_comp(G_sub,comp)
+		delete_redundant_comp(G_sub,1)
+		for node in G_sub.nodes() :
+			G.node[node]=G_sub.node[node]
+		G.add_edges_from(G_sub.edges())
+
+
+
+def Delete_root_of_joined_comp(G,comp):
+	"""For some contigs, paths can be found between themselves and their respective reverse-complement, we make the decision to cut them"""
+	def reverse_Node_sign(Node):
+		sign=Node[-1]
+		Node=Node[:-1]
+		sign="+"*(sign=="-")+"-"*(sign=="+")
+		Node=Node+sign
+		return Node
+	def check_result_of_removal(G,comp,Edges_to_remove):
+		G_sub=G.subgraph(comp)
+		G_sub.remove_edges_from(Edges_to_remove)
+		return len([comp for comp in nx.connected_components(G_sub)]),G_sub
+	def Get_root_of_joined_comp(G,comp) :
+		List_min_node=[10e6,[]]
+		for nodes in comp :
+			node=nodes[:-1]
+			if len(set([node+"+",node+"-"])&comp)==2 :
+				Dist=len(nx.shortest_path(G,node+"+",node+"-"))
+				if Dist<List_min_node[0] :
+					List_min_node=[Dist,[node]]
+				if Dist==List_min_node[0] :
+					List_min_node[1].append(node)
+		Root=sorted(List_min_node[1],key=lambda x:len(G.neighbors(x+'+')))[0]+"+"
+		return Root
+	def identify_comp_to_prune(G_sub) :
+		# after a few prunning step we obtain actually more than 2 subgraph, either we need to prune again all of them, either part of them
+		Edges_to_remove=[]
+		for comp in nx.connected_components(G_sub) :
+			Listcomp
+			node=list(comp)[0][:-1]
+			if len(set([node+"+",node+"-"])&comp)==2 :
+				List_Root=[]
+				Pruning_routine(G.subgraph(comp),comp,Edges_to_remove,List_Root)
+		return Edges_to_remove
+	def identify_neighbours(G,Current_Root,List_Root) :
+		neighbors=[nodes for nodes in G.neighbors(Current_Root)]
+		neighbors_num=Counter(List_Root)[Current_Root]-1
+		Next_Neighbors=neighbors[neighbors_num]
+		for nodes in neighbors :
+			if reverse_Node_sign(nodes) in neighbors :
+				Next_Neighbors=nodes
+				break
+		return [(Current_Root,Next_Neighbors),(reverse_Node_sign(Current_Root),reverse_Node_sign(Next_Neighbors))]
+	def Pruning_routine(G,comp,Edges_to_remove,List_Root) :
+		#print len(List_Root)
+		Current_Root=Get_root_of_joined_comp(G,comp)
+		List_Root.append(Current_Root)
+		Edges_to_remove+=identify_neighbours(G,Current_Root,List_Root)
+		Nb_comp,G_sub=check_result_of_removal(G,comp,Edges_to_remove)
+		if Nb_comp==1 :
+			Pruning_routine(G_sub,comp,Edges_to_remove,List_Root)
+		else :
+			Additional_Edge_to_remove=identify_comp_to_prune(G_sub)
+	List_Root=[]
+	Edges_to_remove=[]
+	Pruning_routine(G,comp,Edges_to_remove,List_Root)
+	#return check_result_of_removal(G,comp,Edges_to_remove)
+	G.remove_edges_from(Edges_to_remove)
 
 def Get_Contig_Assignment(contig_assignment) :
 	Dico_Contig_Bug={}
@@ -192,11 +238,6 @@ def Get_Contig_Assignment(contig_assignment) :
 			value=(value==[])*["NA"]+(value!=[])*value
 			Dico_Contig_Bug[key]=value
 	return Dico_Contig_Bug
-
-
-
-		
-
 
 
 def Rewrite_gfa(Dico_Contig_Bug,fasta_file,gfa_file) :
@@ -292,10 +333,10 @@ def Draw_Graph(Draw,Gt):
 # gfa_file='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.contigs.gfa'
 # gfa_file_raw='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.gfa'
 
-#contig_overlap="141"
-#File_in='LactoParaPhage_contig.fa'
-#contig_assignment=["TabC","LactoAssign.csv"]
-#Draw=""
+# contig_overlap="141"
+# File_in='LactoParaPhage_contig.fa'
+# contig_assignment=["TabC","LactoAssign.csv"]
+# Draw=""
 # gfa_file='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.contigs.gfa'
 # gfa_file_raw='/home/ubuntu/DesmanExample/Example/Assembly/intermediate_contigs/k119.gfa'
 
@@ -347,11 +388,8 @@ if __name__ == "__main__":
 	#parser.add_argument("Graph_library",help="Choose between Networkx and Graph-tool as a graph-library")
 	args = parser.parse_args()
 	Contig_assignment=["None",""]
-	Draw=""
 	if args.C :
 		Contig_assignment=["C",args.C]
 	if args.TabC :
 		Contig_assignment=["TabC",args.TabC]
-	if args.Draw :
-		Draw=args.Draw
-	main(args.contig_overlap,args.File_in,args.Output,Contig_assignment,Draw)
+	main(args.contig_overlap,args.File_in,args.Output,Contig_assignment,args.Draw)
