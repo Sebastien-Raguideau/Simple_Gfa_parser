@@ -290,7 +290,7 @@ def Rewrite_gfa(Dico_Contig_Bug,fasta_file,gfa_file) :
 	H.close()
 
 def Translation_from_NX_to_Gt(G,Gt) :
-	Ordered_node_list=sorted(G.node.keys(),key=lambda x:int(x.split("_")[-1][:-1]))
+	Ordered_node_list=sorted(G.node.keys(),key=lambda x:float(x.split("_")[-1][:-1]))
 	Gt.add_vertex(len(G))
 	vertex_prop_Name = Gt.new_vertex_property("string")
 	vertex_prop_Seq = Gt.new_vertex_property("object")
