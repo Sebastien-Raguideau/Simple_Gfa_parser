@@ -184,7 +184,6 @@ def Delete_root_of_joined_comp(G,comp):
 		# after a few prunning step we obtain actually more than 2 subgraph, either we need to prune again all of them, either part of them
 		Edges_to_remove=[]
 		for comp in nx.connected_components(G_sub) :
-			Listcomp
 			node=list(comp)[0][:-1]
 			if len(set([node+"+",node+"-"])&comp)==2 :
 				List_Root=[]
