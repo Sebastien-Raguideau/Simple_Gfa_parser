@@ -5,7 +5,6 @@ import networkx as nx
 import Bio
 from Bio.SeqIO.FastaIO import *
 from Bio.Seq import Seq
-import matplotlib.pyplot as plt
 import argparse
 import numpy as np
 from collections import Counter
@@ -150,6 +149,7 @@ def delete_redundant_comp(G,round) :
 		for comp in Comp_to_check :
 			Delete_root_of_joined_comp(G_sub,comp)
 		delete_redundant_comp(G_sub,1)
+		G.add_nodes_from(G_sub.nodes())
 		for node in G_sub.nodes() :
 			G.node[node]=G_sub.node[node]
 		G.add_edges_from(G_sub.edges())
@@ -317,9 +317,9 @@ def Translation_from_NX_to_Gt(G,Gt) :
 
 
 def Save_Graph(G,Gt,file_out) :
-	Handle=open(file_out+'.Nx_Pickle','w')
-	pickle.dump(G, Handle)
-	Handle.close()
+	# Handle=open(file_out+'.Nx_Pickle','w')
+	# pickle.dump(G, Handle)
+	# Handle.close()
 	Gt.save(file_out+'.gt')
 
 def Draw_Graph(Draw,Gt):
